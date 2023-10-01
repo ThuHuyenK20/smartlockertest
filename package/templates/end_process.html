@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Kết thúc quy trình</title>
+   <style>
+       body {
+           font-family: Arial, sans-serif;
+           background-color: #f2f2f2;
+           margin: 0;
+           padding: 0;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           height: 100vh;
+       }
+
+       .end-process-container {
+           background-color: #fff;
+           padding: 20px;
+           border-radius: 5px;
+           box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+           text-align: center;
+       }
+
+       .end-process-result {
+           font-size: 18px;
+           margin-bottom: 20px;
+       }
+
+       .end-process-button {
+           background-color: #007bff;
+           color: #fff;
+           padding: 10px 20px;
+           border: none;
+           border-radius: 3px;
+           font-size: 16px;
+           cursor: pointer;
+       }
+
+       .end-process-button:hover {
+           background-color: #0056b3;
+       }
+   </style>
+</head>
+<body>
+   <div class="end-process-container">
+    <div class="end-process-result">
+        <form action="/end_process" method="post">
+        <h1>Xác nhận quy trình</h1>
+        <p>Vui lòng nhập OTP để kết thúc quy trình:</p>
+        <input type="text" id="otp_code">
+        <button id="end_process_button" onclick="endProcess()">Kết thúc quy trình</button>
+        </form>
+    </div>
+</div>
+
+
+</body>
+</html>
