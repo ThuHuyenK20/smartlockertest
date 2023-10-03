@@ -3,7 +3,7 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Kết thúc quy trình</title>
+   <title>Nhập mã OTP</title>
    <style>
        body {
            font-family: Arial, sans-serif;
@@ -16,7 +16,8 @@
            height: 100vh;
        }
 
-       .end-process-container {
+
+       .otp-container {
            background-color: #fff;
            padding: 20px;
            border-radius: 5px;
@@ -24,12 +25,18 @@
            text-align: center;
        }
 
-       .end-process-result {
-           font-size: 18px;
-           margin-bottom: 20px;
+
+       .otp-input {
+           width: 200px;
+           padding: 10px;
+           margin: 10px;
+           font-size: 16px;
+           border: 1px solid #ccc;
+           border-radius: 3px;
        }
 
-       .end-process-button {
+
+       .otp-button {
            background-color: #007bff;
            color: #fff;
            padding: 10px 20px;
@@ -39,23 +46,23 @@
            cursor: pointer;
        }
 
-       .end-process-button:hover {
+
+       .otp-button:hover {
            background-color: #0056b3;
        }
    </style>
 </head>
 <body>
-   <div class="end-process-container">
-    <div class="end-process-result">
+   <div class="otp-container">
         <form action="/end_process" method="post">
         <h1>Xác nhận quy trình</h1>
         <p>Vui lòng nhập OTP để kết thúc quy trình:</p>
-        <input type="text" id="otp_code">
-        <button id="end_process_button" onclick="endProcess()">Kết thúc quy trình</button>
-        </form>
-    </div>
-</div>
-
-
+           <input type="text" name="otp_code" class="otp_code" placeholder="Mã OTP" required><br>
+           <button type="submit">Kết thúc quy trình</button>
+       </form>
+   </div>
 </body>
 </html>
+
+
+
