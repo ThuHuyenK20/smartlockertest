@@ -213,24 +213,6 @@ def process_locker():
         # Kiểm tra xem số điện thoại có tồn tại trong bảng "users" hay không
         cursor.execute("SELECT user_id FROM users WHERE phone = %s", (phone,))
         user = cursor.fetchone()
-        # # Lấy danh sách các tủ có trạng thái "on" và end_time đã qua
-        # select_query = """
-        #         SELECT l.locker_id, h.end_time
-        #         FROM lockers l
-        #         INNER JOIN histories h ON l.locker_id = h.locker_id
-        #         WHERE l.status = 'on' AND h.end_time < NOW()
-        #     """
-        # cursor.execute(select_query)
-        # lockers_to_update = cursor.fetchall()
-        #
-        # current_time = datetime.now()
-        # # Kiểm tra và cập nhật trạng thái của các tủ
-        # for locker_id, end_time in lockers_to_update:
-        #         if current_time > end_time:
-        #             # Cập nhật trạng thái của tủ sang "off"
-        #             update_locker_query = "UPDATE lockers SET status = 'off' WHERE locker_id = %s"
-        #             cursor.execute(update_locker_query, (locker_id,))
-        #             db.commit()
         if user:
             # Kiểm tra xem có tủ nào có status "off" không
             cursor.execute("SELECT locker_id FROM lockers WHERE status = 'off' AND locker_id BETWEEN 'locker1' AND 'locker4'")
@@ -320,35 +302,68 @@ def end_process():
     if request.method == 'POST':
         otp_code = request.form['otp_code']
 
-        cursor.execute("SELECT locker_id, CAST(expiration_time AS DATETIME) FROM otps WHERE otp_code = %s", (otp_code,))
-        otp_data = cursor.fetchone()
-        if otp_data:
-            # Truy vấn bảng otps để tìm locker_id dựa trên otp_code cũ
-            cursor.execute("SELECT locker_id FROM otps WHERE otp_code = %s", (otp_code,))
-            locker_id = cursor.fetchone()
+        cursor.execute("SELECT locker_id,user_id FROM otps WHERE otp_code = %s", (otp_code,))
+        result = cursor.fetchone()
 
-            if locker_id:
-                    locker_id = locker_id[0]
-                    # Xóa mã OTP cũ ứng với locker_id
-                    cursor.execute("DELETE FROM otps WHERE locker_id = %s", (locker_id,))
-                    db.commit()
+        if result:
+            locker_id = result[0]
+            user_id = result[1]
+            # Tạo mã OTP mới và kiểm tra tính duy nhất
+            otp_code_new= random.randint(1000, 9999)
+            # Tạo otp_id mới
+            otp_id = generate_otp_id()
+            cursor.execute("SELECT end_time FROM histories WHERE locker_id = %s ORDER BY end_time DESC LIMIT 1",
+                           (locker_id,))
+            expiration_time_records = cursor.fetchall()
+            cursor.execute("DELETE FROM otps WHERE locker_id = %s", (locker_id,))
 
-                    # Tạo mã OTP mới và cập nhật vào bảng otps
-                    new_otp_code = random.randint(1000, 9999)
-                    cursor.execute("INSERT INTO otps (otp_code, locker_id) VALUES (%s, %s)", (new_otp_code, locker_id))
-                    db.commit()
+            if expiration_time_records:
+                # Trích xuất giá trị duy nhất từ danh sách expiration_time_records
+                expiration_time = expiration_time_records[0][0]
 
-                    cursor.execute("SELECT mail FROM users WHERE role_id = '3'")
-                    mail = cursor.fetchone()
+                # Tiếp theo, bạn có thể chèn giá trị này vào bảng otps
+                cursor.execute(
+                    "INSERT INTO otps (otp_id, otp_code, user_id, locker_id, expiration_time) VALUES (%s, %s, %s, %s, %s)",
+                    (otp_id, otp_code_new, result[1],locker_id, expiration_time))
+                db.commit()
 
-                    send_email(mail,locker_id, new_otp_code)
+                cursor.execute("SELECT mail FROM users WHERE role_id = '3'")
+                emails = cursor.fetchall()
 
-                    return jsonify("Quy trình đã kết thúc và tủ đã được đóng thành công.")
+                for email in emails:
+                    user_email = email[0]
+                    send_email(user_email, locker_id, otp_code_new)
         else:
                 return jsonify("Không tìm thấy thông tin mã OTP.")
   except Exception as e:
         return f"Lỗi: {e}"
   return render_template('end_process.html')
+
+@app.route('/complete', methods=['GET','POST'])
+def complete():
+    try:
+        if request.method == 'POST':
+            otp_code = request.form['otp_code']
+
+            cursor.execute("SELECT locker_id FROM otps WHERE otp_code = %s", (otp_code,))
+            result = cursor.fetchone()
+
+            if result:
+                locker_id = result[0]
+
+                # Cập nhật status của tủ đã chọn
+                cursor.execute("UPDATE lockers SET status = 'off' WHERE locker_id = %s", (locker_id,))
+                current_time = datetime.now()
+                cursor.execute("UPDATE histories SET end_time = %s WHERE locker_id = %s", (current_time, locker_id,))
+                cursor.execute("DELETE FROM otps WHERE locker_id = %s", (locker_id,))
+                db.commit()
+                return ("Đơn hàng đã hoàn thành quá trình nhận hàng!!!")
+            else:
+                return ("Mã OTP không hợp lệ, vui lòng kiểm tra lại!!!")
+
+    except Exception as e:
+        return f"Lỗi: {e}"
+    return render_template('complete.html')
 
 
 @app.route('/history')
